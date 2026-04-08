@@ -69,10 +69,8 @@ const options = Deno.args[0] === "localhost"
   ? {
     cert: await Deno.readTextFile("./secret/cert.pem"),
     key: await Deno.readTextFile("./secret/key.pem"),
+    port: 8443,
   }
-  : {};
+  : { port: 443 };
 
-Deno.serve({
-  port: 443,
-  ...options,
-}, app.fetch);
+Deno.serve(options, app.fetch);
