@@ -65,7 +65,8 @@ app.notFound((c) =>
   c.redirect("/?fallbackBy=" + encodeURIComponent(c.req.path))
 );
 
-const options = Deno.args[0] === "localhost"
+const isLocalhost = Deno.args[0] === "localhost";
+const options = isLocalhost
   ? {
     cert: await Deno.readTextFile("./secret/cert.pem"),
     key: await Deno.readTextFile("./secret/key.pem"),
@@ -73,6 +74,6 @@ const options = Deno.args[0] === "localhost"
   : {};
 
 Deno.serve({
-  port: 443,
+  port: isLocalhost ? 8443 : 443,
   ...options,
 }, app.fetch);
