@@ -1,5 +1,5 @@
-import { Hono } from "@hono/hono";
-import { serveStatic } from "@hono/hono/deno";
+import { Hono } from "npm:hono";
+import { serveStatic } from "npm:hono/deno";
 
 const app = new Hono();
 
@@ -11,20 +11,17 @@ app.all("/_proxy/R4", async (c) => {
   const response = await fetch(targetURL, {
     method: c.req.method,
     headers: c.req.raw.headers,
-    body: c.req.method === "GET" || c.req.method === "HEAD"
+    body: ["GET", "HEAD"].includes(c.req.method)
       ? undefined
       : c.req.raw.body,
   });
 
   return new Response(response.body, {
     status: response.status,
-    headers: Object.fromEntries(
-      [
-        ...response.headers.entries(),
-        ["Access-Control-Allow-Origin", "*"],
-      ],
-    ),
-    statusText: response.statusText,
+    headers: {
+      ...Object.fromEntries(response.headers.entries()),
+      "Access-Control-Allow-Origin": "*",
+    },
   });
 });
 
@@ -37,42 +34,26 @@ app.all("/_proxy/CHROME_GW/*", async (c) => {
   const response = await fetch(targetURL, {
     method: c.req.method,
     headers: c.req.raw.headers,
-    body: c.req.method === "GET" || c.req.method === "HEAD"
+    body: ["GET", "HEAD"].includes(c.req.method)
       ? undefined
       : c.req.raw.body,
   });
 
   return new Response(response.body, {
     status: response.status,
-    headers: Object.fromEntries(
-      [
-        ...response.headers.entries(),
-        ["Access-Control-Allow-Origin", "*"],
-      ],
-    ),
-    statusText: response.statusText,
+    headers: {
+      ...Object.fromEntries(response.headers.entries()),
+      "Access-Control-Allow-Origin": "*",
+    },
   });
 });
 
-app.use(
-  "*",
-  serveStatic({
-    root: "./www",
-  }),
-);
+app.use("*", serveStatic({ root: "./www" }));
 
 app.notFound((c) =>
   c.redirect("/?fallbackBy=" + encodeURIComponent(c.req.path))
 );
 
-const isLocal = Deno.args[0] === "localhost";
-
-if (isLocal) {
-  Deno.serve({
-    port: 8443,
-    cert: await Deno.readTextFile("./secret/cert.pem"),
-    key: await Deno.readTextFile("./secret/key.pem"),
-  }, app.fetch);
-} else {
-  Deno.serve(app.fetch);
-}
+Deno.serve({
+  port: Number(Deno.env.get("PORT")) || 8000,
+}, app.fetch);
