@@ -6,4 +6,6 @@ COPY . .
 
 RUN deno cache index.ts
 
-CMD ["run", "--allow-net", "--allow-env", "index.ts"]
+EXPOSE 8000
+
+CMD ["run", "--allow-net", "--allow-read", "--allow-env", "index.ts"]
